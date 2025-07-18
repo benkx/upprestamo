@@ -1,0 +1,58 @@
+@extends('adminlte::page')
+@section('title', 'Equipos')
+
+
+@section('content_header') {{-- Sección específica de AdminLTE para el encabezado --}}
+    <h1>Equipos
+        <a href="{{ route('equipos.create') }}" class="btn btn-success btn-sm">
+            <i class="fas fa-plus-circle"></i> Nuevo
+        </a>
+    </h1>
+@stop
+
+
+@section('content') {{-- Contenido principal debe usar esta sección --}}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Equipos</title>
+</head>
+<body>
+
+
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Descripcion</th>
+                <th>Codigo del Equipo</th>
+                <th>Numero serial</th>
+                <th>Tipo de Equipo</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach($equipos as $equipo)
+                <tr>
+                    <td>{{ $equipo->idequipo }}</td>
+                    <td>{{ $equipo->descripcion }}</td>
+                    <td>{{ $equipo->codequipo }}</td>
+                    <td>{{ $equipo->numserial }}</td>
+                    <td>{{ $equipo->tipoequipo }}</td>
+                    <td>{{ $equipo->estado }}</td>
+                    <td>
+                        
+                        <a href="{{ route('equipos.edit', $equipo->idequipo) }}" class="btn btn-primary">Editar</a>
+                        <form action="{{ route('equipos.destroy', $equipo->idequipo) }}" method="POST" style="display:inline;">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="btn btn-danger">Eliminar</button>
+                        </form>
+                    </td>
+                </tr>
+            @endforeach
+        </tbody>
+</body>
+</html>
+@stop
