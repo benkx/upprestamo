@@ -50,14 +50,15 @@ class PrestamosController extends Controller
             'fechadevolucion' => 'required|date',
             'idusuario' => 'required|exists:usuarios,idusuario', // Assuming idusuario is a string, adjust as necessary
             'idperoacademico' => 'required|exists:periodoacademico,idperoacademico', // Assuming idperiodoacademico is a string, adjust as necessary
-            'estado' => 'nullable|in:Prestamo total,Prestamo parcial,Vencido,Finalizado',
+            #'estado' => 'nullable|string',
+            'estado' => 'nullable|in:Prestamo total,Prestamo parcial,Vencido,Finalizado,Cancelado',
             'equipos' => 'required|array|min:1', // Assuming equipos is an array of equipment IDs
             'equipos.*.idequipo' => 'required|exists:equipos,idequipo', // Validate each equipo ID
             'equipos.*.fechaentrega' => 'required|date',
             'equipos.*.fechadevolucion' => 'nullable|date|after_or_equal:equipos.*.fechaentrega', // `fechadevolucion` en `detalleprestamo`
             'equipos.*.observacionentrega' => 'nullable|string|max:100',
             'equipos.*.observaciondevolucion' => 'nullable|string|max:100',
-            'equipos.*.estado_detalle' => 'nullable|in:Entregado,Devuelto',
+            'equipos.*.estado_detalle' => 'nullable|in:Entregado,Devuelto,Vencido,Dañado',
         ],
         [
             'equipos.required' => 'Debes añadir al menos un equipo al préstamo.',
@@ -94,6 +95,7 @@ class PrestamosController extends Controller
                 'idusuario' => $request->idusuario,
                 'idperoacademico' => $request->idperoacademico,
                 'estado' => $request->estado,
+                #'estado' => 'Prestado Total',
             ]);
 
             foreach ($request->equipos as $equipoDetalle) {
@@ -167,6 +169,7 @@ class PrestamosController extends Controller
             'idusuario' => 'nullable|exists:usuarios,idusuario',
             'idperoacademico' => 'nullable|exists:periodoacademico,idperoacademico',
             'estado' => 'nullable|in:Prestamo total,Prestamo parcial,Vencido,Finalizado',
+            #'estado' => 'nullable|string',
             'equipos' => 'required|array|min:1', // Debe haber al menos un equipo
             'equipos.*.iddetprestamo' => 'nullable|exists:detalleprestamo,iddetprestamo', // ID del detalle si ya existe
             'equipos.*.idequipo' => 'required|exists:equipos,idequipo',
@@ -174,7 +177,7 @@ class PrestamosController extends Controller
             'equipos.*.fechadevolucion' => 'nullable|date|after_or_equal:equipos.*.fechaentrega',
             'equipos.*.observacionentrega' => 'required|string|max:100',
             'equipos.*.observaciondevolucion' => 'required|string|max:100',
-            'equipos.*.estado_detalle' => 'nullable|in:Entregado,Devuelto',
+            'equipos.*.estado_detalle' => 'nullable|in:Entregado,Devuelto,Vencido,Dañado',
         ], [
             'equipos.required' => 'Debes añadir al menos un equipo al préstamo.',
             'equipos.*.idequipo.required' => 'Cada equipo debe tener una selección.',
@@ -237,6 +240,30 @@ class PrestamosController extends Controller
             if (!empty($detailsToDelete)) {
                 DetallePrestamo::whereIn('iddetprestamo', $detailsToDelete)->delete();
             }
+
+            // $prestamo->load('detalles');
+
+            // $totalEquipos = $prestamo->detalles->count();
+            // $equipoDevueltos = $prestamo->detalles->where('estado_detalle','devuelto')->count();
+
+            // if($totalEquipos == 0){
+            //     $prestamo->estado = 'Cancelado';
+
+            // }elseif($equipoDevueltos === $totalEquipos){
+
+            //     $prestamo->estado = 'Cancelado';
+
+            // }elseif($equipoDevueltos > 0 && $equipoDevueltos < $totalEquipos){
+                
+            //     $prestamo->estado = 'Prestado parcial';
+
+            // }else{
+
+            //     $prestamo->estado = 'Prestado total0000000000';
+            // }
+
+            // $prestamo->save();
+
 
             return redirect()->route('prestamos.index')->with('success', 'Préstamo actualizado exitosamente.');
 

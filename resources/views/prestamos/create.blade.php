@@ -215,8 +215,8 @@
                                     {{-- Ajusta estos valores según tu ENUM en la migración de detalleprestamo --}}
                                     <option value="entregado" {{ old('equipos.', '.estado_detalle') == 'entregado' ? 'selected' : '' }}>Entregado</option>
                                     <option value="devuelto" {{ old('equipos.', '.estado_detalle') == 'devuelto' ? 'selected' : '' }}>Devuelto</option>
-                                    <option value="pendiente_devolucion" {{ old('equipos.', '.estado_detalle') == 'pendiente_devolucion' ? 'selected' : '' }}>Pendiente Devolución</option>
-                                    <option value="danado" {{ old('equipos.', '.estado_detalle') == 'danado' ? 'selected' : '' }}>Dañado</option>
+                                    <option value="vencido" {{ old('equipos.', '.estado_detalle') == 'vencido' ? 'selected' : '' }}>Vencido</option>
+                                    <option value="dañado" {{ old('equipos.', '.estado_detalle') == 'dañado' ? 'selected' : '' }}>Dañado</option>
                                 </select>
                                 @error('equipos.${equipmentIndex}.estado_detalle')
                                     <div class="invalid-feedback">{{ $message }}</div>

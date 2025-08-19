@@ -107,8 +107,9 @@
                     <select name="estado" id="estado" class="form-control @error('estado') is-invalid @enderror" required>
                         <option value="Prestamo total" {{ old('estado', $prestamo->estado) == 'Prestamo total' ? 'selected' : '' }}>Prestamo total</option>
                         <option value="Prestamo parcial" {{ old('estado', $prestamo->estado) == 'Prestamo parcial' ? 'selected' : '' }}>Prestamo parcial</option>
-                        <option value="vencido" {{ old('estado', $prestamo->estado) == 'vencido' ? 'selected' : '' }}>Vencido</option>
-                        <option value="cancelado" {{ old('estado', $prestamo->estado) == 'cancelado' ? 'selected' : '' }}>Cancelado</option>
+                        <option value="Vencido" {{ old('estado', $prestamo->estado) == 'Vencido' ? 'selected' : '' }}>Vencido</option>
+                        <option value="Cancelado" {{ old('estado', $prestamo->estado) == 'Cancelado' ? 'selected' : '' }}>Cancelado</option>
+                        <option value="Finalizado" {{ old('estado', $prestamo->estado) == 'Finalizado' ? 'selected' : '' }}>Finalizado</option>
                     </select>
                     @error('estado')
                         <div class="invalid-feedback">{{ $message }}</div>
@@ -222,8 +223,8 @@
                                 <select name="equipos[${equipmentIndex}][estado_detalle]" id="estado_detalle_${equipmentIndex}" class="form-control" required>
                                     <option value="entregado">Entregado</option>
                                     <option value="devuelto">Devuelto</option>
-                                    <option value="pendiente_devolucion">Pendiente Devolución</option>
-                                    <option value="danado">Dañado</option>
+                                    <option value="vencido">Vencido</option>
+                                    <option value="dañado">Dañado</option>
                                 </select>
                             </div>
                         </div>

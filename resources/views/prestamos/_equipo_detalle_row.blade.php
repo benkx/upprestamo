@@ -7,8 +7,9 @@
     <div class="card-header">
         <h3 class="card-title">Equipo #{{ $index + 1 }}</h3>
         <div class="card-tools">
-            <button type="button" class="btn btn-tool remove-equipment-row">
-                <i class="fas fa-times"></i>
+            {{-- Botón para quitar el equipo --}}
+            <button type="button" class="btn btn-danger btn-sm remove-equipment-row" title="Quitar Equipo">
+                <i class="fas fa-trash"></i> Quitar Equipo
             </button>
         </div>
     </div>
@@ -70,10 +71,10 @@
             <select name="equipos[{{ $index }}][estado_detalle]" id="estado_detalle_${{ $index }}"
                     class="form-control @error('equipos.'.$index.'.estado_detalle') is-invalid @enderror" required>
                 {{-- Ajusta estos valores según tu ENUM en la migración de detalleprestamo --}}
-                <option value="Entregado" {{ (old('equipos.'.$index.'.estado_detalle') == 'entregado' || (isset($equipoDetalle) && $equipoDetalle['estado_detalle'] == 'entregado')) ? 'selected' : '' }}>Entregado</option>
-                <option value="Devuelto" {{ (old('equipos.'.$index.'.estado_detalle') == 'devuelto' || (isset($equipoDetalle) && $equipoDetalle['estado_detalle'] == 'devuelto')) ? 'selected' : '' }}>Devuelto</option>
-                {{-- <option value="pendiente_devolucion" {{ (old('equipos.'.$index.'.estado_detalle') == 'pendiente_devolucion' || (isset($equipoDetalle) && $equipoDetalle['estado_detalle'] == 'pendiente_devolucion')) ? 'selected' : '' }}>Pendiente Devolución</option>
-                <option value="danado" {{ (old('equipos.'.$index.'.estado_detalle') == 'danado' || (isset($equipoDetalle) && $equipoDetalle['estado_detalle'] == 'danado')) ? 'selected' : '' }}>Dañado</option> --}}
+                <option value="Entregado" {{ (old('equipos.'.$index.'.estado_detalle') == 'Entregado' || (isset($equipoDetalle) && $equipoDetalle['estado_detalle'] == 'Entregado')) ? 'selected' : '' }}>Entregado</option>
+                <option value="Devuelto" {{ (old('equipos.'.$index.'.estado_detalle') == 'Devuelto' || (isset($equipoDetalle) && $equipoDetalle['estado_detalle'] == 'Devuelto')) ? 'selected' : '' }}>Devuelto</option>
+                <option value="Vencido" {{ (old('equipos.'.$index.'.estado_detalle') == 'Vencido' || (isset($equipoDetalle) && $equipoDetalle['estado_detalle'] == 'Vencido')) ? 'selected' : '' }}>Vencido</option>
+                <option value="Dañado" {{ (old('equipos.'.$index.'.estado_detalle') == 'Dañado' || (isset($equipoDetalle) && $equipoDetalle['estado_detalle'] == 'Dañado')) ? 'selected' : '' }}>Dañado</option>
             </select>
             @error('equipos.'.$index.'.estado_detalle')
                 <div class="invalid-feedback">{{ $message }}</div>
