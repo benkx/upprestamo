@@ -3,18 +3,19 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Prestamos;
 
 class Detalleprestamo extends Model
 {
     protected $table = 'detalleprestamo';
     protected $primaryKey = 'iddetprestamo';
-    protected $fillable = ['idprestamo', 'idequipo', 'fechaentrega', 'fechadevolucion',
+    protected $fillable = ['idprestamo', 'idequipo', 'fecha_devolucion_real ',
         'observacionentrega', 'observaciondevolucion', 'estado_detalle'];
 
     // un detalle de prestamo pertenece a un prestamo
-    public function prestamos()
+    public function prestamo()
     {
-        return $this->belongsTo(Prestamos::class, 'idprestamo');
+        return $this->belongsTo(Prestamos::class, 'idprestamo', 'idprestamo');
     }
 
     // un detalle de prestamo pertenece a un equipo
@@ -24,10 +25,10 @@ class Detalleprestamo extends Model
     }
 
     // un detalle de prestamo pertenece a un docente
-    public function docente()
-    {
-        return $this->belongsTo(Docentes::class, 'iddocente');
-    }
+    // public function docente()
+    // {
+    //     return $this->belongsTo(Docentes::class, 'iddocente');
+    // }
 
     // public function detalles()
     // {

@@ -111,6 +111,23 @@ return [
             // 'encrypt' => env('DB_ENCRYPT', 'yes'),
             // 'trust_server_certificate' => env('DB_TRUST_SERVER_CERTIFICATE', 'false'),
         ],
+       'oracle' => [
+            'driver'         => 'oracle',
+            'host'           => env('ORACLE_HOST', '170.238.239.250'),
+            'port'           => env('ORACLE_PORT', '1521'),
+            'database'       => env('ORACLE_SERVICE_NAME', 'UNIPA1N'), // Nombre del Servicio/SID
+            'username'       => env('ORACLE_USERNAME', 'reporteador'),
+            'password'       => env('ORACLE_PASSWORD', 'reporteador'),
+            
+            // ¡LA CLAVE 'SCHEMA' HA SIDO ELIMINADA! Esto resuelve el ORA-00931
+            
+            'service_name'   => env('ORACLE_SERVICE_NAME', 'UNIPA1N'), // Confirma el Service Name
+            'charset'        => 'AL32UTF8',
+            'prefix'         => '',
+           // 'prefix_schema'  => '',
+           // 'edition'        => 'default',
+            'server_version' => '19', // Asegura que la versión es correcta
+        ],
 
     ],
 

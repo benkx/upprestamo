@@ -24,7 +24,7 @@ return new class extends Migration
     {
         Schema::table('detalleprestamo', function (Blueprint $table) {
             
-            DB::statement("ALTER TABLE detalleprestamo ADD CONSTRAINT detalleprestamo_estado_check CHECK (estado IN ('Devuelto', 'Entregado', 'Vencido', 'Dañado'));");
+             
 
         });
     }

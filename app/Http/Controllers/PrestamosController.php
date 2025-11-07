@@ -1,6 +1,7 @@
 <?php
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\Log;
 use App\Models\Prestamos;
 use App\Models\Docentes;
 use App\Models\Ubicacion;
@@ -9,17 +10,53 @@ use App\Models\Periodoacademico;
 use App\Models\Detalleprestamo; // Assuming you have a model for Detalleprestamo
 use App\Models\Equipos; // Assuming you have a model for Equipos
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB; 
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Database\QueryException;
+
 
 class PrestamosController extends Controller
 {
+   
+     public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
+   
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {   
+   
+
+          $funcionarios = DB::connection('oracle')->select(
+            "SELECT 
+                NUMDOC, 
+                NOMBRE1, 
+                APELLIDO1, 
+                LABORDOCENTE, 
+                NOMBRE1 || ' ' || APELLIDO1 AS NOMBRE_COMPLETO 
+             FROM ACADEMICO.V_FUNCIONARIOS 
+             ORDER BY NOMBRE_COMPLETO"
+        );
         #$periodoacademico = Periodoacademico::with('periodoacademico');
-        $prestamos = Prestamos::with('docente', 'ubicacion', 'periodoacademico', 'usuario')->get();
-        return view('prestamos.index', compact('prestamos'));
+        $prestamos = Prestamos::with('ubicacion', 'periodoacademico', 'usuario','detalles')->get();
+        
+        //filtrar por estado si se envie el parametro
+        $query = Prestamos::query();
+
+        if($request->filled('estado')){
+            $query->where('estado',$request->estado);
+        }
+        //ordenar por fecha de prestamo desc
+         $query->orderBy('fechaprestamo', 'desc');
+        
+        //paginacion
+           $prestamos= $query->paginate(10);
+
+        return view('prestamos.index', compact('prestamos', 'funcionarios'));
     }
 
     /**
@@ -27,14 +64,42 @@ class PrestamosController extends Controller
      */
     public function create()
     {
-        $docentes = Docentes::all();
+
+        #$docentes = Docentes::all();
         $ubicaciones = Ubicacion::all();
-        $usuarios = Usuarios::all();
+        // $usuarios = Usuarios::all();
         $periodoacademico = Periodoacademico::all();
         $equipos = Equipos::all(); // Assuming you have a model for Equipos
         #$detalleprestamo = Detalleprestamo::all(); // Assuming you have a model for Detalleprestamo
-      
-        return view('prestamos.create', compact('docentes', 'ubicaciones', 'usuarios', 'periodoacademico','equipos'));
+
+        // 2. Obtener la lista de funcionarios (Docentes) desde Oracle
+        // NOTA: Reemplaza 'nombre_conexion_oracle' con el nombre real de tu conexión
+        try {
+            $funcionarios = DB::connection('oracle')
+                ->table('academico.v_FUNCIONARIOS')
+                ->select('NUMDOC', DB::raw("NOMBRE1 || ' ' || APELLIDO1 AS NOMBRE_COMPLETO"))
+                ->orderBy('NOMBRE_COMPLETO')
+                ->get();
+        } catch (\Exception $e) {
+            // Manejo de error si la conexión a Oracle falla
+            $funcionarios = collect();
+            session()->flash('error', 'Error al cargar los funcionarios desde Oracle: ' . $e->getMessage());
+        }
+
+        // 3. Obtener la lista de recursos físicos desde Oracle
+        try {
+            $recursos = DB::connection('oracle')
+                ->table('academico.v_recursofisico')
+                ->select('RECUSOFISICO', 'UBICACION')
+                ->orderBy('UBICACION')
+                ->get();
+        } catch (\Exception $e) {
+            // Manejo de error si la conexión a Oracle falla
+            $recursos = collect();
+            session()->flash('error', 'Error al cargar los recursos desde Oracle: ' . $e->getMessage());
+        }
+
+        return view('prestamos.create', compact('funcionarios', 'ubicaciones', 'periodoacademico','equipos', 'recursos'));
     }
 
     /**
@@ -42,101 +107,130 @@ class PrestamosController extends Controller
      */
     public function store(Request $request)
     {
+        // CRÍTICO: Comprueba qué llega realmente del formulario
+      #\Log::info('Datos del formulario:', $request->all());
+      #dd($request->all());
+        // 1. VALIDACIÓN SIMPLIFICADA
         $validated = $request->validate([
-            
-            'iddocente' => 'required|exists:docentes,iddocente', // Assuming iddocente is a string, adjust as necessary
-            'idubicacion' => 'required|exists:ubicacion,idubicacion', // Assuming idubicacion is a string, adjust as necessary
+            // Préstamo Principal
+           'iddocente' => 'required|string|max:50',
+           'nomfuncionarios' => 'required|string|max:100',
+            'idubicacion' => 'required|exists:ubicacion,idubicacion',
             'fechaprestamo' => 'required|date',
-            'fechadevolucion' => 'required|date',
-            'idusuario' => 'required|exists:usuarios,idusuario', // Assuming idusuario is a string, adjust as necessary
-            'idperoacademico' => 'required|exists:periodoacademico,idperoacademico', // Assuming idperiodoacademico is a string, adjust as necessary
-            #'estado' => 'nullable|string',
-            'estado' => 'nullable|in:Prestamo total,Prestamo parcial,Vencido,Finalizado,Cancelado',
-            'equipos' => 'required|array|min:1', // Assuming equipos is an array of equipment IDs
-            'equipos.*.idequipo' => 'required|exists:equipos,idequipo', // Validate each equipo ID
-            'equipos.*.fechaentrega' => 'required|date',
-            'equipos.*.fechadevolucion' => 'nullable|date|after_or_equal:equipos.*.fechaentrega', // `fechadevolucion` en `detalleprestamo`
+            #'fechadevolucion' => 'required|date|after_or_equal:fechaprestamo', // Fecha esperada de devolución
+            'idperoacademico' => 'required|exists:periodoacademico,idperoacademico',
+            'estado' => 'nullable|in:Activo,Vencido,Finalizado,Cancelado',
+           
+
+            // Eliminamos la validación de 'estado' del request, ya que lo fijaremos en 'Activo'
+            
+            // Detalles de Equipo
+            'equipos' => 'required|array|min:1', 
+            'equipos.*.idequipo' => 'required|exists:equipos,idequipo', 
             'equipos.*.observacionentrega' => 'nullable|string|max:100',
-            'equipos.*.observaciondevolucion' => 'nullable|string|max:100',
             'equipos.*.estado_detalle' => 'nullable|in:Entregado,Devuelto,Vencido,Dañado',
+            // Eliminamos validaciones para fechas y estado_detalle del request, ya que se asignan
+            // o se manejan en la devolución.
         ],
+        // Mensajes de error personalizados (Simplificados)
         [
             'equipos.required' => 'Debes añadir al menos un equipo al préstamo.',
             'equipos.*.idequipo.required' => 'Cada equipo debe tener una selección.',
-            'equipos.*.fechaentrega.required' => 'La fecha de entrega del equipo es obligatoria.',
-            'equipos.*.fechaentrega.date' => 'La fecha de entrega del equipo debe ser una fecha válida.',
-            'equipos.*.fechadevolucion.date' => 'La fecha de devolución del equipo debe ser una fecha válida.',
-            'equipos.*.fechadevolucion.after_or_equal' => 'La fecha de devolución del equipo no puede ser anterior a la fecha de entrega.',
-            'equipos.*.observacionentrega.required' => 'La observación de entrega es obligatoria.',
-            'equipos.*.observacionentrega.string' => 'La observación de entrega debe ser texto.',
+            #'fechadevolucion.after_or_equal' => 'La fecha de devolución no puede ser anterior a la fecha de préstamo.',
             'equipos.*.observacionentrega.max' => 'La observación de entrega no debe exceder los 100 caracteres.',
-            'equipos.*.observaciondevolucion.required' => 'La observación de devolución es obligatoria.',
-            'equipos.*.observaciondevolucion.string' => 'La observación de devolución debe ser texto.',
-            'equipos.*.observaciondevolucion.max' => 'La observación de devolución no debe exceder los 100 caracteres.',
-            'equipos.*.estado_detalle.required' => 'El estado del detalle del equipo es obligatorio.',
-            'equipos.*.estado_detalle.in' => 'El estado del detalle del equipo no es válido.',
         ]);
 
+            // dd([
+            //    # 'idusuario' => Auth::user()->idusuario,
+            //     'validated_data' => $validated,
+            //   'fillable_prestamo' => (new Prestamos())->getFillable()
+            // ]);
+//  $currentUserId = Auth::check() ? Auth::user()->idusuario : null;
 
-        // foreach ($request->detalleprestamo as $detalle) {
-        //     $detalleprestamo = new Detalleprestamo();
-        //     $detalleprestamo->idprestamo = $detalle['idprestamo'];
-        //     $detalleprestamo->idequipo = $detalle['idequipo'];
-        //     $detalleprestamo->save(); // Guardar en BD
-        // }
+//         if (!$currentUserId) {
+//             return redirect()->back()->withInput()->with('error', 'Error de autenticación. No se pudo obtener el ID del usuario.');
+//         }
+            
+        // INICIO DE LA TRANSACCIÓN: Asegura la integridad de los datos
+        DB::beginTransaction();
 
-        // Crear el registro del préstamo principal
+        
         try {
+            // 2. CREAR EL PRÉSTAMO PRINCIPAL (Tabla 'prestamos')
             $prestamo = Prestamos::create([
-                'iddocente' => $request->iddocente,
-                'idubicacion' => $request->idubicacion,
-                'fechaprestamo' => $request->fechaprestamo,
-                'fechadevolucion' => $request->fechadevolucion, // Esta es la fecha de devolución del préstamo general
-                'idusuario' => $request->idusuario,
-                'idperoacademico' => $request->idperoacademico,
-                'estado' => $request->estado,
-                #'estado' => 'Prestado Total',
+                
+                // CRÍTICO: Asignación segura del ID del usuario de la sesión
+                #'idusuario' => Auth::user()->idusuario,
+                
+                // Campos provenientes del request
+                // 'idusuario' => $currentUserId,
+                'iddocente' => $validated['iddocente'],
+                'nomfuncionarios' => $validated['nomfuncionarios'],
+                'idubicacion' => $validated['idubicacion'],
+                'fechaprestamo' => $validated['fechaprestamo'],
+               # 'fechadevolucion' => $validated['fechadevolucion'],
+                'idperoacademico' => $validated['idperoacademico'],
+                
+                // CRÍTICO: Forzamos el estado inicial
+                'estado' => 'Activo',
             ]);
 
-            foreach ($request->equipos as $equipoDetalle) {
+            // 3. CREAR DETALLES DEL PRÉSTAMO (Tabla 'detalleprestamo')
+            foreach ($validated['equipos'] as $equipoDetalle) {
                 DetallePrestamo::create([
-                    'idprestamo' => $prestamo->idprestamo, // Usa el ID del préstamo recién creado
+                    'idprestamo' => $prestamo->idprestamo, 
                     'idequipo' => $equipoDetalle['idequipo'],
-                    'fechaentrega' => $equipoDetalle['fechaentrega'],
-                    'fechadevolucion' => $equipoDetalle['fechadevolucion'],
-                    'observacionentrega' => $equipoDetalle['observacionentrega'],
-                    'observaciondevolucion' => $equipoDetalle['observaciondevolucion'],
-                    'estado_detalle' => $equipoDetalle['estado_detalle'],
+                    // Quitamos 'fechaentrega' y 'fechadevolucion' del detalle
+                    
+                    // Asignamos la observación si existe, sino, queda nulo/vacío
+                    'observacionentrega' => $equipoDetalle['observacionentrega'] ?? null, 
+                    
+                    // Ya no viene del formulario; se maneja en la devolución
+                    'observaciondevolucion' => null, 
+                    #'estado_detalle' => $equipoDetalle['estado_detalle'], 
+                    // CRÍTICO: Forzamos el estado inicial del detalle
+                    'estado_detalle' => 'Entregado', 
                 ]);
             }
 
-            return redirect()->route('prestamos.index')->with('success', 'Préstamo y sus detalles creados exitosamente.');
+            \Log::info('Datos del formulario:',  $prestamo->getAttributes());
+            // 4. COMMIT: Si todo salió bien, guardamos los cambios
+           DB::commit();
+
+            return redirect()->route('prestamos.index')->with('success', 'Préstamo y sus detalles creados exitosamente. Estado inicial: Activo.');
+
+        } catch (QueryException $e) {
+            // CATCH ESPECÍFICO PARA ERRORES DE BASE DE DATOS (Clave Foránea, Null Constraint, etc.)
+            DB::rollBack();
+            Log::error("ERROR DE BASE DE DATOS EN PRÉSTAMO: " . $e->getMessage() . " - SQL: " . $e->getSql());
+            \Log::info('Datos del formulario:',  $e->getMessage());
+            // CRÍTICO: DETIENE LA EJECUCIÓN Y MUESTRA EL ERROR SQL EXACTO.
+            dd('Error de Base de Datos (QueryException): ', $e->getMessage(), 'SQL fallido (si aplica): ', $e->getSql(), 'Código de Error: ', $e->getCode());
+            
+            return redirect()->back()->withInput()->with('error', 'Error de Base de Datos. La operación se revirtió. Consulta el log de Laravel.');
 
         } catch (\Exception $e) {
-            // Manejo de errores, por ejemplo, loggear el error o devolver un mensaje al usuario
-            return redirect()->back()->withInput()->with('error', 'Hubo un error al crear el préstamo: ' . $e->getMessage());
+            // CATCH GENERAL (Para errores de PHP, o cualquier otra excepción)
+            DB::rollBack();
+            Log::error("ERROR GENERAL EN PRÉSTAMO: " . $e->getMessage() . " en línea " . $e->getLine() . " en archivo " . $e->getFile());
+            
+            // CRÍTICO: DETIENE LA EJECUCIÓN Y MUESTRA LA EXCEPCIÓN COMPLETA.
+            dd('Error General (\Exception): ', $e->getMessage(), 'Archivo: ' . $e->getFile(), 'Línea: ' . $e->getLine());
+            
+            return redirect()->back()->withInput()->with('error', 'Error desconocido. Revisa el log de Laravel.');
+            
         }
-
-        // $prestamos = new Prestamos();
-        // $prestamos->iddocente = $validated['iddocente'];
-        // $prestamos->idubicacion = $validated['idubicacion'];
-        // $prestamos->fechaprestamo = $validated['fechaprestamo'];
-        // $prestamos->fechadevolucion = $validated['fechadevolucion'];
-        // $prestamos->idusuario = $validated['idusuario'];
-        // $prestamos->idperoacademico = $validated['idperoacademico'];
-        // $prestamos->estado = $validated['estado'];
-        // $prestamos->save(); // Guardar en BD
-      
-
-        // return redirect()->route('prestamos.index')->with('success', 'Préstamo creado con éxito.');
+        
     }
 
+    
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(Prestamos $prestamo)
     {
-        //
+        $prestamo->load('docente', 'ubicacion', 'periodoacademico', 'usuario', 'detalles.equipo');
+        return view('prestamos.show', compact('prestamo'));
     }
 
     /**
@@ -150,10 +244,10 @@ class PrestamosController extends Controller
 
         $docentes = Docentes::all();
         $ubicaciones = Ubicacion::all();
-        $usuarios = Usuarios::all();
+        // $usuarios = Usuarios::all();
         $equipos = Equipos::all();
         $periodoacademico = Periodoacademico::all();
-        return view('prestamos.edit', compact('prestamo', 'docentes', 'ubicaciones', 'usuarios', 'equipos','periodoacademico'));
+        return view('prestamos.edit', compact('prestamo', 'docentes', 'ubicaciones', 'equipos','periodoacademico'));
     }
 
     /**
@@ -165,10 +259,9 @@ class PrestamosController extends Controller
             'iddocente' => 'nullable|exists:docentes,iddocente',
             'idubicacion' => 'nullable|exists:ubicacion,idubicacion',
             'fechaprestamo' => 'required|date',
-            'fechadevolucion' => 'nullable|date|after_or_equal:fechaprestamo',
-            'idusuario' => 'nullable|exists:usuarios,idusuario',
+            // 'idusuario' => 'nullable|exists:usuarios,idusuario',
             'idperoacademico' => 'nullable|exists:periodoacademico,idperoacademico',
-            'estado' => 'nullable|in:Prestamo total,Prestamo parcial,Vencido,Finalizado',
+            'estado' => 'nullable|in:Activo,Vencido,Finalizado,Cancelado',
             #'estado' => 'nullable|string',
             'equipos' => 'required|array|min:1', // Debe haber al menos un equipo
             'equipos.*.iddetprestamo' => 'nullable|exists:detalleprestamo,iddetprestamo', // ID del detalle si ya existe
@@ -178,7 +271,7 @@ class PrestamosController extends Controller
             'equipos.*.observacionentrega' => 'required|string|max:100',
             'equipos.*.observaciondevolucion' => 'required|string|max:100',
             'equipos.*.estado_detalle' => 'nullable|in:Entregado,Devuelto,Vencido,Dañado',
-        ], [
+        ], [ 
             'equipos.required' => 'Debes añadir al menos un equipo al préstamo.',
             'equipos.*.idequipo.required' => 'Cada equipo debe tener una selección.',
             'equipos.*.fechaentrega.required' => 'La fecha de entrega del equipo es obligatoria.',
@@ -197,8 +290,7 @@ class PrestamosController extends Controller
                 'iddocente' => $request->iddocente,
                 'idubicacion' => $request->idubicacion,
                 'fechaprestamo' => $request->fechaprestamo,
-                'fechadevolucion' => $request->fechadevolucion,
-                'idusuario' => $request->idusuario,
+                // 'idusuario' => $request->idusuario,
                 'idperoacademico' => $request->idperoacademico,
                 'estado' => $request->estado,
             ]);

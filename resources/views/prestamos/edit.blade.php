@@ -64,15 +64,8 @@
                     @enderror
                 </div>
 
-                <div class="form-group">
-                    <label for="fechadevolucion">Fecha de devolución (Préstamo General):</label>
-                    <input type="date" class="form-control @error('fechadevolucion') is-invalid @enderror" name="fechadevolucion" id="fechadevolucion" value="{{ old('fechadevolucion', $prestamo->fechadevolucion ? \Carbon\Carbon::parse($prestamo->fechadevolucion)->format('Y-m-d') : '') }}">
-                    @error('fechadevolucion')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
 
-                <div class="form-group">
+                {{-- <div class="form-group">
                     <label for="usuario">Usuario:</label>
                     <select name="idusuario" id="usuario" class="form-control @error('idusuario') is-invalid @enderror">
                         <option value="">Seleccione un usuario</option>
@@ -85,7 +78,7 @@
                     @error('idusuario')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
-                </div>
+                </div> --}}
 
                 <div class="form-group">
                     <label for="periodoacademi">Periodo académico:</label>
@@ -105,8 +98,7 @@
                 <div class="form-group">
                     <label for="estado">Estado del Préstamo:</label>
                     <select name="estado" id="estado" class="form-control @error('estado') is-invalid @enderror" required>
-                        <option value="Prestamo total" {{ old('estado', $prestamo->estado) == 'Prestamo total' ? 'selected' : '' }}>Prestamo total</option>
-                        <option value="Prestamo parcial" {{ old('estado', $prestamo->estado) == 'Prestamo parcial' ? 'selected' : '' }}>Prestamo parcial</option>
+                        <option value="Activo" {{ old('estado', $prestamo->estado) == 'Activo' ? 'selected' : '' }}>Activo</option>
                         <option value="Vencido" {{ old('estado', $prestamo->estado) == 'Vencido' ? 'selected' : '' }}>Vencido</option>
                         <option value="Cancelado" {{ old('estado', $prestamo->estado) == 'Cancelado' ? 'selected' : '' }}>Cancelado</option>
                         <option value="Finalizado" {{ old('estado', $prestamo->estado) == 'Finalizado' ? 'selected' : '' }}>Finalizado</option>
@@ -206,10 +198,7 @@
                                 <label for="fechaentrega_${equipmentIndex}">Fecha de Entrega:</label>
                                 <input type="date" name="equipos[${equipmentIndex}][fechaentrega]" id="fechaentrega_${equipmentIndex}" class="form-control" required>
                             </div>
-                            <div class="form-group">
-                                <label for="fechadevolucion_${equipmentIndex}">Fecha de Devolución (Detalle):</label>
-                                <input type="date" name="equipos[${equipmentIndex}][fechadevolucion]" id="fechadevolucion_${equipmentIndex}" class="form-control">
-                            </div>
+                    
                             <div class="form-group">
                                 <label for="observacionentrega_${equipmentIndex}">Observación de Entrega:</label>
                                 <input type="text" name="equipos[${equipmentIndex}][observacionentrega]" id="observacionentrega_${equipmentIndex}" class="form-control" maxlength="100" required>

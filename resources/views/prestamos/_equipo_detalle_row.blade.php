@@ -30,7 +30,7 @@
                 <div class="invalid-feedback">{{ $message }}</div>
             @enderror
         </div>
-        <div class="form-group">
+        {{-- <div class="form-group">
             <label for="fechaentrega_{{ $index }}">Fecha de Entrega:</label>
             <input type="date" name="equipos[{{ $index }}][fechaentrega]" id="fechaentrega_${{ $index }}"
                    class="form-control @error('equipos.'.$index.'.fechaentrega') is-invalid @enderror"
@@ -38,8 +38,8 @@
             @error('equipos.'.$index.'.fechaentrega')
                 <div class="invalid-feedback">{{ $message }}</div>
             @enderror
-        </div>
-        <div class="form-group">
+        </div> --}}
+        {{-- <div class="form-group">
             <label for="fechadevolucion_{{ $index }}">Fecha de Devolución (Detalle):</label>
             <input type="date" name="equipos[{{ $index }}][fechadevolucion]" id="fechadevolucion_${{ $index }}"
                    class="form-control @error('equipos.'.$index.'.fechadevolucion') is-invalid @enderror"
@@ -47,7 +47,7 @@
             @error('equipos.'.$index.'.fechadevolucion')
                 <div class="invalid-feedback">{{ $message }}</div>
             @enderror
-        </div>
+        </div> --}}
         <div class="form-group">
             <label for="observacionentrega_${{ $index }}">Observación de Entrega:</label>
             <input type="text" name="equipos[{{ $index }}][observacionentrega]" id="observacionentrega_${{ $index }}"
@@ -57,7 +57,7 @@
                 <div class="invalid-feedback">{{ $message }}</div>
             @enderror
         </div>
-        <div class="form-group">
+        {{-- <div class="form-group">
             <label for="observaciondevolucion_${{ $index }}">Observación de Devolución:</label>
             <input type="text" name="equipos[{{ $index }}][observaciondevolucion]" id="observaciondevolucion_${{ $index }}"
                    class="form-control @error('equipos.'.$index.'.observaciondevolucion') is-invalid @enderror"
@@ -65,20 +65,20 @@
             @error('equipos.'.$index.'.observaciondevolucion')
                 <div class="invalid-feedback">{{ $message }}</div>
             @enderror
-        </div>
-        <div class="form-group">
+        </div> --}}
+        {{-- <div class="form-group">
             <label for="estado_detalle_${{ $index }}">Estado del Detalle:</label>
-            <select name="equipos[{{ $index }}][estado_detalle]" id="estado_detalle_${{ $index }}"
+            <select name="equipos[{{ $index }}][ _detalle]" id="estado_detalle_${{ $index }}"
                     class="form-control @error('equipos.'.$index.'.estado_detalle') is-invalid @enderror" required>
-                {{-- Ajusta estos valores según tu ENUM en la migración de detalleprestamo --}}
-                <option value="Entregado" {{ (old('equipos.'.$index.'.estado_detalle') == 'Entregado' || (isset($equipoDetalle) && $equipoDetalle['estado_detalle'] == 'Entregado')) ? 'selected' : '' }}>Entregado</option>
-                <option value="Devuelto" {{ (old('equipos.'.$index.'.estado_detalle') == 'Devuelto' || (isset($equipoDetalle) && $equipoDetalle['estado_detalle'] == 'Devuelto')) ? 'selected' : '' }}>Devuelto</option>
-                <option value="Vencido" {{ (old('equipos.'.$index.'.estado_detalle') == 'Vencido' || (isset($equipoDetalle) && $equipoDetalle['estado_detalle'] == 'Vencido')) ? 'selected' : '' }}>Vencido</option>
-                <option value="Dañado" {{ (old('equipos.'.$index.'.estado_detalle') == 'Dañado' || (isset($equipoDetalle) && $equipoDetalle['estado_detalle'] == 'Dañado')) ? 'selected' : '' }}>Dañado</option>
+                {{-- Ajusta estos valores según tu ENUM en la migración de detalleprestamo 
+                <option value="Entregado" >Entregado</option>
+                <option value="Devuelto" >Devuelto</option>
+                <option value="Vencido" >Vencido</option>
+                <option value="Dañado" >Dañado</option>
             </select>
             @error('equipos.'.$index.'.estado_detalle')
                 <div class="invalid-feedback">{{ $message }}</div>
             @enderror
-        </div>
+        </div> --}}
     </div>
 </div>

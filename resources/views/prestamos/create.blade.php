@@ -1,17 +1,34 @@
+
 @extends('adminlte::page')
 
 @section('title', 'Crear Préstamo')
 
 @section('content_header')
     <h1>Crear Préstamo</h1>
-@stop
+@endsection
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crear Préstamo</title>
+
+    {{-- Librerías requeridas por bootstrap-select --}}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.4.1/js/bootstrap.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.13.15/dist/js/bootstrap-select.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.13.15/dist/css/bootstrap-select.min.css">
+
+</head>
 
 @section('content')
     <div class="card card-primary">
         <div class="card-header">
             <h3 class="card-title">Nuevo Préstamo</h3>
         </div>
-        <!-- /.card-header -->
+
+        <!-- ELEMENTO DE DATOS OCULTO: Inyección de JSON segura -->
+        <div id="equipo-data-holder" data-equipos=@json(isset($equipos) ? $equipos : []) style="display: none;"></div>
+
         <!-- Formulario -->
         <form id="createLoanForm" action="{{ route('prestamos.store') }}" method="POST">
             @csrf
@@ -23,25 +40,31 @@
                     </div>
                 @endif
 
-                {{-- Campos del Préstamo Principal --}}
+                {{-- Campo Funcionario (Docente) --}}
                 <div class="form-group">
-                    <label for="docente">Nombre del Docente:</label>
-                    <select name="iddocente" id="docente" class="form-control @error('iddocente') is-invalid @enderror">
-                        <option value="">Seleccione un docente</option>
-                        @foreach($docentes as $docente)
-                            <option value="{{ $docente->iddocente }}" {{ old('iddocente') == $docente->iddocente ? 'selected' : '' }}>
-                                {{ $docente->numdocumento }} - {{ $docente->nomcompleto }}
+                    <label for="select_funcionario">Funcionario (Docente)</label>
+                    <select class="form-control @error('numdoc') is-invalid @enderror" 
+                            data-size="5" 
+                            data-live-search="true" 
+                            id="select_funcionario" 
+                            name="iddocente" 
+                            required>
+                        <option value="">Seleccione un Funcionario</option>
+                        @foreach ($funcionarios as $funcionario)
+                            {{-- CRÍTICO: Inyectamos el nombre para que JS lo lea. --}}
+                            <option value="{{ $funcionario->numdoc }}" 
+                                    data-nombre="{{ $funcionario->nombre_completo }}"
+                                    {{ old('numdoc') == $funcionario->numdoc ? 'selected' : '' }}>
+                                {{ $funcionario->numdoc }} ({{ $funcionario->nombre_completo }})
                             </option>
                         @endforeach
                     </select>
-                    @error('iddocente')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
+                    @error('numdoc') <p class="mt-1 text-sm text-danger">{{ $message }}</p> @enderror
                 </div>
 
                 <div class="form-group">
                     <label for="ubicacione">Nombre de la ubicación:</label>
-                    <select name="idubicacion" id="ubicacione" class="form-control @error('idubicacion') is-invalid @enderror">
+                    <select name="idubicacion" id="ubicacione" class="form-control @error('idubicacion') is-invalid @enderror" required>
                         <option value="">Seleccione una ubicación</option>
                         @foreach($ubicaciones as $ubicacione)
                             <option value="{{ $ubicacione->idubicacion }}" {{ old('idubicacion') == $ubicacione->idubicacion ? 'selected' : '' }}>
@@ -56,38 +79,15 @@
 
                 <div class="form-group">
                     <label for="fechaprestamo">Fecha de préstamo:</label>
-                    <input type="date" class="form-control @error('fechaprestamo') is-invalid @enderror" name="fechaprestamo" id="fechaprestamo" value="{{ old('fechaprestamo') }}" required>
+                    <input type="date" class="form-control datepicker @error('fechaprestamo') is-invalid @enderror" name="fechaprestamo" id="fechaprestamo" value="{{ old('fechaprestamo', date('Y-m-d')) }}" required>
                     @error('fechaprestamo')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
 
                 <div class="form-group">
-                    <label for="fechadevolucion">Fecha de devolución (Préstamo General):</label>
-                    <input type="date" class="form-control @error('fechadevolucion') is-invalid @enderror" name="fechadevolucion" id="fechadevolucion" value="{{ old('fechadevolucion') }}">
-                    @error('fechadevolucion')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
-
-                <div class="form-group">
-                    <label for="usuario">Usuario:</label>
-                    <select name="idusuario" id="usuario" class="form-control @error('idusuario') is-invalid @enderror">
-                        <option value="">Seleccione un usuario</option>
-                        @foreach($usuarios as $usuario)
-                            <option value="{{ $usuario->idusuario }}" {{ old('idusuario') == $usuario->idusuario ? 'selected' : '' }}>
-                                {{ $usuario->nomusuario }} - {{ $usuario->nomcompleto }}
-                            </option>
-                        @endforeach
-                    </select>
-                    @error('idusuario')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
-
-                <div class="form-group">
                     <label for="periodoacademi">Periodo académico:</label>
-                    <select name="idperoacademico" id="periodoacademi" class="form-control @error('idperoacademico') is-invalid @enderror">
+                    <select name="idperoacademico" id="periodoacademi" class="form-control @error('idperoacademico') is-invalid @enderror" required>
                         <option value="">Seleccione un periodo académico</option>
                         @foreach($periodoacademico as $periodoacademi)
                             <option value="{{ $periodoacademi->idperoacademico }}" {{ old('idperoacademico') == $periodoacademi->idperoacademico ? 'selected' : '' }}>
@@ -100,9 +100,17 @@
                     @enderror
                 </div>
 
+                <!-- CAMPO OCULTO CRÍTICO: Si llega NULL es porque JS no lo está llenando. -->
+                <input type="hidden" name="nomfuncionarios" id="nomfuncionarios_hidden" value="{{ old('nomfuncionarios') }}">
+
                 <div class="form-group">
                     <label for="estado">Estado del Préstamo:</label>
-                    <input type="text" class="form-control @error('estado') is-invalid @enderror" name="estado" id="estado" value="{{ old('estado', 'activo') }}" required>
+                    <select class="form-control @error('estado') is-invalid @enderror" name="estado" id="estado" required>
+                        <option value="Activo" {{ old('estado', 'Activo') == 'Activo' ? 'selected' : '' }}>Activo</option>
+                        <option value="Vencido" {{ old('estado') == 'Vencido' ? 'selected' : '' }}>Vencido</option>
+                        <option value="Finalizado" {{ old('estado') == 'Finalizado' ? 'selected' : '' }}>Finalizado</option>
+                        <option value="Cancelado" {{ old('estado') == 'Cancelado' ? 'selected' : '' }}>Cancelado</option>
+                    </select>
                     @error('estado')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
@@ -124,7 +132,7 @@
                         {{-- Añadir una fila inicial vacía si no hay datos viejos --}}
                         @include('prestamos._equipo_detalle_row', ['index' => 0, 'equipos' => $equipos])
                     @endif
-                </div>
+                 </div>
 
                 <button type="button" id="add-equipment-btn" class="btn btn-success mt-3 mb-4">
                     <i class="fas fa-plus"></i> Añadir Equipo
@@ -134,7 +142,6 @@
             <!-- /.card-body -->
 
             <div class="card-footer">
-                {{-- Botón "Crear" que envía el formulario directamente --}}
                 <button type="submit" class="btn btn-primary">
                     Crear Préstamo
                 </button>
@@ -147,11 +154,17 @@
 
 @section('js')
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-   
+       
+        // Al seleccionar un funcionario, actualizar el campo oculto con el nombre
+            document.getElementById('select_funcionario').addEventListener('change', function() {
+                const selectedOption = this.options[this.selectedIndex];
+                const nombreFuncionario = selectedOption.getAttribute('data-nombre') || '';
+                document.getElementById('nomfuncionarios_hidden').value = nombreFuncionario;
+            });
 
-            // --- Lógica para añadir/eliminar filas de equipo dinámicamente ---
-            let equipmentIndex = {{ old('equipos') ? count(old('equipos')) : 0 }}; // Inicia el índice
+       document.addEventListener('DOMContentLoaded', function () {
+       // --- Lógica para añadir/eliminar filas de equipo dinámicamente ---
+            let equipmentIndex = {{ old('equipos') ? count(old('equipos')) : 1 }}; // Inicia el índice
 
             const equiposContainer = document.getElementById('equipos-container');
             const addEquipmentBtn = document.getElementById('add-equipment-btn');
@@ -163,8 +176,8 @@
                         <div class="card-header">
                             <h3 class="card-title">Equipo #${equipmentIndex + 1}</h3>
                             <div class="card-tools">
-                                <button type="button" class="btn btn-tool remove-equipment-row">
-                                    <i class="fas fa-times"></i>
+                                <button type="button" class="btn btn-danger btn-sm remove-equipment-row" title="Quitar Equipo"> 
+                                    <i class="fas fa-times"></i> Quitar Equipo
                                 </button>
                             </div>
                         </div>
@@ -181,20 +194,7 @@
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
-                            <div class="form-group">
-                                <label for="fechaentrega_${equipmentIndex}">Fecha de Entrega:</label>
-                                <input type="date" name="equipos[${equipmentIndex}][fechaentrega]" id="fechaentrega_${equipmentIndex}" class="form-control ('equipos.${equipmentIndex}.fechaentrega') required>
-                                @error('equipos.${equipmentIndex}.fechaentrega')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                            <div class="form-group">
-                                <label for="fechadevolucion_${equipmentIndex}">Fecha de Devolución (Detalle):</label>
-                                <input type="date" name="equipos[${equipmentIndex}][fechadevolucion]" id="fechadevolucion_${equipmentIndex}" class="form-control ('equipos.${equipmentIndex}.fechadevolucion') }}">
-                                @error('equipos.${equipmentIndex}.fechadevolucion')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
+                        
                             <div class="form-group">
                                 <label for="observacionentrega_${equipmentIndex}">Observación de Entrega:</label>
                                 <input type="text" name="equipos[${equipmentIndex}][observacionentrega]" id="observacionentrega_${equipmentIndex}" class="form-control ('equipos.${equipmentIndex}.observacionentrega') }}" maxlength="100" required> {{-- Añadido required --}}
@@ -202,26 +202,8 @@
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
-                            <div class="form-group">
-                                <label for="observaciondevolucion_${equipmentIndex}">Observación de Devolución:</label>
-                                <input type="text" name="equipos[${equipmentIndex}][observaciondevolucion]" id="observaciondevolucion_${equipmentIndex}" class="form-control ('equipos.${equipmentIndex}.observaciondevolucion') }}" maxlength="100" required> {{-- Añadido required --}}
-                                @error('equipos.${equipmentIndex}.observaciondevolucion')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                            <div class="form-group">
-                                <label for="estado_detalle_${equipmentIndex}">Estado del Detalle:</label>
-                                <select name="equipos[${equipmentIndex}][estado_detalle]" id="estado_detalle_${equipmentIndex}" class="form-control @error('equipos.${equipmentIndex}.estado_detalle') is-invalid @enderror" required>
-                                    {{-- Ajusta estos valores según tu ENUM en la migración de detalleprestamo --}}
-                                    <option value="entregado" {{ old('equipos.', '.estado_detalle') == 'entregado' ? 'selected' : '' }}>Entregado</option>
-                                    <option value="devuelto" {{ old('equipos.', '.estado_detalle') == 'devuelto' ? 'selected' : '' }}>Devuelto</option>
-                                    <option value="vencido" {{ old('equipos.', '.estado_detalle') == 'vencido' ? 'selected' : '' }}>Vencido</option>
-                                    <option value="dañado" {{ old('equipos.', '.estado_detalle') == 'dañado' ? 'selected' : '' }}>Dañado</option>
-                                </select>
-                                @error('equipos.${equipmentIndex}.estado_detalle')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
+         
+                            
                         </div>
                     </div>
                 `;
@@ -254,6 +236,14 @@
                     this.closest('.equipment-row').remove();
                 });
             });
+
+            // Al seleccionar un funcionario, actualizar el campo oculto con el nombre
+            document.getElementById('select_funcionario').addEventListener('change', function() {
+                const selectedOption = this.options[this.selectedIndex];
+                const nombreFuncionario = selectedOption.getAttribute('data-nombre') || '';
+                document.getElementById('nomfuncionarios_hidden').value = nombreFuncionario;
+            });
+
         });
     </script>
 @stop

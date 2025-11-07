@@ -16,10 +16,31 @@ class Prestamos extends Model
     protected $table = 'prestamos';
 
     protected $primaryKey = 'idprestamo';
-    
-    protected $fillable = ['iddocente', 'idubicacion', 'fechaprestamo','fechadevolucion','idusuario', 'idperoacademico', 'estado'];
+    protected $fillable = ['idubicacion', 'fechaprestamo', 'idperoacademico', 'estado','nomfuncionarios','iddocente'];
+
 
     public $timestamps = true; 
+
+
+     protected $casts = [
+        'fechaprestamo' => 'date',
+    ];
+
+    public const ESTADO_ACTIVO = 'Activo';
+    public const ESTADO_FINALIZADO = 'Finalizado';
+    public const ESTADO_VENCIDO = 'Vencido';
+    public const ESTADO_CANCELADO = 'Cancelado';
+
+    public static function getEstadosValidos()
+    {
+        return [
+            self::ESTADO_ACTIVO,
+            self::ESTADO_FINALIZADO,
+            self::ESTADO_VENCIDO,
+            self::ESTADO_CANCELADO,
+        ];
+    }
+
     // un prestamo pertenece a un docente
     public function docente()
     {
@@ -39,7 +60,7 @@ class Prestamos extends Model
 
     public function usuario()
     {
-        return $this->belongsTo(Usuarios::class, 'idusuario');
+        return $this->belongsTo(Usuarios::class, 'idusuario', 'idusuario');
     }
 
     public function detalleprestamos()
@@ -50,5 +71,28 @@ class Prestamos extends Model
     public function detalles()
     {
         return $this->hasMany(DetallePrestamo::class, 'idprestamo','idprestamo');
+    }
+
+     public function getProgresoDevolucionAttribute()
+    {
+        // Cargamos la relación de detalles si no ha sido cargada
+        if (!$this->relationLoaded('detalles')) {
+            $this->load('detalles');
+        }
+
+        $totalEquipos = $this->detalles->count();
+        
+        // Contamos los equipos que aún están en estado 'Entregado' (pendientes de acción)
+        $entregadosPendientes = $this->detalles->where('estado_detalle', 'Entregado')->count();
+
+        // Los equipos que ya han sido procesados (Devueltos, Dañados, Vencidos, etc.)
+        $devueltosProcesados = $totalEquipos - $entregadosPendientes;
+
+        // Si todos han sido procesados, devolvemos 'Finalizado' para mayor claridad
+        if ($entregadosPendientes === 0) {
+             return "(0 de {$totalEquipos})";
+        }
+
+        return "({$devueltosProcesados} de {$totalEquipos})";
     }
 }

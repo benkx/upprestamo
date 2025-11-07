@@ -12,6 +12,9 @@ use App\Http\Controllers\UsuariosController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\LoginRegisterController;
 use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\DevolucionController;
+use App\Http\Controllers\FuncionarioController;
+use App\Http\Controllers\RecursoficoController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -117,5 +120,14 @@ Route::get('/detalleprestamo/{iddetalle}/edit', [DetalleprestamoController::clas
 Route::put('/detalleprestamo/{iddetalle}', [DetalleprestamoController::class, 'update'])->name('detalleprestamo.update');
 Route::delete('/detalleprestamo/{id}', [DetalleprestamoController::class, 'destroy'])->name('detalleprestamo.destroy');
 #Auth::routes();
+
+Route::get('/devoluciones/pendientes', [DevolucionController::class, 'pendientes'])->name('devoluciones.pendientes');
+Route::post('/devoluciones/procesar', [DevolucionController::class, 'procesarDevolucion'])->name('devoluciones.procesar');
+
+// Route::get('/prestamos/{prestamo}/devolver',[PrestamosController::class,'devolver'])->name('prestamos.devolver');
+// Route::post('/prestamos/{prestamo}/devolver',[PrestamosController::class,'procesarDevolucion'])->name('prestamos.procesarDevolucion');
+
+Route::get('/funcionarios', [FuncionarioController::class, 'index'])->name('funcionarios.index');
+Route::get('/recursofico', [App\Http\Controllers\RecursoficoController::class, 'index'])->name('recursofico.index');
 
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');

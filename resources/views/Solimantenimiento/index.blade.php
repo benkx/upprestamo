@@ -14,6 +14,25 @@
 <html>
 <head>
     <title>Mantenimiento</title>
+        <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 1px solid #ccc;
+        }
+        th, td {
+            border-top: 1px solid #ccc;
+            border-bottom: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+            background-color: white;
+        }
+        th {
+            border-top: 1px solid #ccc;
+            border-bottom: 1px solid #ccc;
+            background-color: #f2f2f2;
+        }
+    </style>
 </head>
 <body>
 @section('content') {{-- Contenido principal debe usar esta sección --}}
